@@ -1,21 +1,38 @@
 import requests
 from bs4 import BeautifulSoup as bs4
 import urllib.request
-
+import subprocess,sys, os
 url_base = "http://www.mangareader.net/"
 start_url = "http://www.mangareader.net/bleach/1"
+
+class opener(urllib.request.FancyURLopener):
+	version="Mozilla/5.0"
+	
+i = 1
+c = 1
+
+def makeCBR(filename):
+	global i
+	global c
+	os.system('\"C:\\Program Files\\7-Zip\\7z.exe\" a -tzip imgs\\%s.cbr imgs\\*.jpg'%filename.replace(" ","_"))
+	os.system("del imgs\\*.jpg")
+	c+=1
+	i =1
 
 def numOfPage(soup):
 	return int(soup.find_all('div',{'id':'selectpage'})[0].text.split(' of ')[-1])
 
 def downloadImg(url,filename):
-	urllib.request.urlretrieve(url, filename+".jpg")
+	downloader = opener()
+	downloader.retrieve(url, str("imgs\\")+filename+".jpg")
 	
 def processPage(url,dosya):
+	global i
 	soup_page = bs4(requests.get(url).content,'html.parser')
 	url = soup_page.find_all('img',{'id':'img'})[0].get('src')
 	dosya.writelines(url+"\n")
-	#downloadImg(url,str(page_num))
+	downloadImg(url,str(i))
+	i+=1
 	
 def processChapter(url,dosya):
 	soup_page = bs4(requests.get(url).content,'html.parser')
@@ -36,6 +53,7 @@ def processAll(url):
 		url = url_base + chapters[i-1].get('href')[1:]
 		dosya = open("%s.txt"%str(chapters[i-1].text),"w")
 		processChapter(url,dosya)
+		makeCBR(str(chapters[i-1].text))
 		dosya.close()
 	
 	
